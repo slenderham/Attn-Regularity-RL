@@ -1,0 +1,146 @@
+library(lme4)
+library(lmerTest)
+library(tidyverse)
+library(effectsize)
+library(car)
+library(gtools)
+library(patchwork)
+library(flextable)
+library(scales)
+
+stars.pval <- function(x){
+  stars <- c("***", "**", "*", "")
+  var <- c(0, 0.001, 0.01, 0.05, 1)
+  i <- findInterval(x, var, left.open = T, rightmost.closed = T)
+  stars[i]
+}
+
+
+processed_data_dir <- "~/Documents/Attn_MdPRL/Py-attention-project-analysis/data/Processed"
+figure_data_dir <- "~/Documents/Attn_MdPRL/Py-attention-project-analysis/figures/All Processed"
+table_data_dir <- "~/Documents/Attn_MdPRL/Py-attention-project-analysis/tables/All Processed"
+
+all_credit_assignment_data <- read.csv(file.path(processed_data_dir, "credit_assignment_df.csv"))
+
+credit_assignment_data <- all_credit_assignment_data %>% filter(block==0)
+model1 <- glmer(choice ~ F0_Chosen_R + F0_Chosen_C + F0_Foregone_R + F0_Foregone_C + 
+                 F1_Chosen_R + F1_Chosen_C + F1_Foregone_R + F1_Foregone_C + 
+                 O_Chosen_R + O_Chosen_C + O_Foregone_R + O_Foregone_C + 
+                 (F0_Chosen_C + F0_Foregone_R + F0_Foregone_C + 
+                    F1_Chosen_C + F1_Foregone_C + 
+                    O_Foregone_R -1||subj), 
+               data=credit_assignment_data, family = binomial(link = "logit"),
+               control=glmerControl(optimizer = "bobyqa"))
+print(summary(model1))
+model_summary <- coef(summary(model1))
+
+results_df <- data.frame(model_summary)
+names(results_df) <- c('b', 'SE', 'z', 'p')
+
+results_df <- results_df %>%
+  add_column(Predictor=c('Intercept', 'F0 chosen WSLS', 'F0 chosen CA', 'F0 foregone WSLS', 'F0 foregone CA', 
+                         'F1 chosen WSLS', 'F1 chosen CA', 'F1 foregone WSLS', 'F1 foregone CA', 
+                         'O chosen WSLS', 'O chosen CA', 'O foregone WSLS', 'O foregone CA'),
+             .before=0) %>%
+  mutate(p=if_else(p<0.001, '<0.001', as.character(round(p, 3))))
+flextable(results_df) %>% 
+  colformat_double(j=c('b', 'SE', 'z'), digits=2) %>% 
+  colformat_double(j=c('p'), digits=3) %>%
+  width(width=1.5) %>%
+  italic(part='header') %>%
+  align(align='center', part='all') %>%
+  line_spacing(space=1.2) %>%
+  padding(padding = 0, part = "body") %>% 
+  save_as_html(path=file.path(table_data_dir, "credit_assignment_lme_1.html"))
+
+varnames <- apply(expand_grid(c("Chosen", "Foregone"), c("WSLS", "CA")), 1, function(x) paste0(x, collapse="\n"))
+varnames <- rep(varnames, time=3)
+dimnames <- rep(c("F[m]", "F[n]", "O"), each=4)
+
+credit_assignment_results1 <- data.frame(PlotOrder=1:12,
+                                        Dimension=dimnames, 
+                                        VarNames=varnames,
+                                        Coefficients=model_summary[,"Estimate"][2:13], 
+                                        SEs=model_summary[,"Std. Error"][2:13],
+                                        pvals=stars.pval(model_summary[,"Pr(>|z|)"][2:13]))
+credit_assignment_results1$VarNames <- reorder(credit_assignment_results1$VarNames, credit_assignment_results1$PlotOrder)
+
+p1 <- ggplot(data=credit_assignment_results1, mapping = aes(x=VarNames, group=Dimension)) +
+  geom_bar(mapping=aes(y=Coefficients, fill=Dimension), stat='identity', position=position_dodge(.9)) + 
+  geom_errorbar(mapping=aes(ymin=Coefficients-SEs, ymax=Coefficients+SEs), color='black', 
+                position=position_dodge(.9), width=0.2, show.legend = FALSE) +
+  geom_text(mapping=aes(y=Coefficients+sign(Coefficients)*(SEs+0.05)-0.04, label=pvals),
+            position=position_dodge(.9), vjust='center', size=12) +
+  theme(text = element_text(size = 28), axis.text = element_text(size = 25), axis.title.x = element_blank(),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  scale_color_manual(breaks = c("F[m]", "F[n]", "O"), values=c('deepskyblue', 'darkorange', 'green3')) +
+  scale_fill_manual(breaks = c("F[m]", "F[n]", "O"), values=c('deepskyblue', 'darkorange', 'green3'), 
+                    labels = parse_format())+
+  theme(legend.text = element_text(size=28), legend.text.align = 0, 
+        legend.title=element_blank(), legend.position = c(0.9, 0.9)) +
+  ylim(-0.7, 0.8)
+# ggsave(filename="credit_assignment_lme_0.pdf", path=figure_data_dir, device='pdf',
+#        width=7, height=5)
+
+credit_assignment_data <- all_credit_assignment_data %>% filter(block==1)
+model2 <- glmer(choice ~ F0_Chosen_R + F0_Chosen_C + F0_Foregone_R + F0_Foregone_C +
+                         F1_Chosen_R + F1_Chosen_C + F1_Foregone_R + F1_Foregone_C +
+                         O_Chosen_R + O_Chosen_C + O_Foregone_R + O_Foregone_C +
+                        ( F0_Chosen_C + F0_Foregone_C +
+                          F1_Chosen_C + F1_Foregone_C +
+                           -1 ||subj),
+                data=credit_assignment_data, family = binomial(link = "logit"),
+                control=glmerControl(optimizer = "bobyqa"))
+print(summary(model2))
+model_summary <- coef(summary(model2))
+
+results_df <- data.frame(model_summary)
+names(results_df) <- c('b', 'SE', 'z', 'p')
+
+results_df <- results_df %>%
+  add_column(Predictor=c('Intercept', 'F0 chosen WSLS', 'F0 chosen CA', 'F0 foregone WSLS', 'F0 foregone CA', 
+                         'F1 chosen WSLS', 'F1 chosen CA', 'F1 foregone WSLS', 'F1 foregone CA', 
+                         'O chosen WSLS', 'O chosen CA', 'O foregone WSLS', 'O foregone CA'),
+             .before=0) %>%
+  mutate(p=if_else(p<0.001, '<0.001', as.character(round(p, 3))))
+flextable(results_df) %>% 
+  colformat_double(j=c('b', 'SE', 'z'), digits=2) %>% 
+  colformat_double(j=c('p'), digits=3) %>%
+  width(width=1.5) %>%
+  italic(part='header') %>%
+  align(align='center', part='all') %>%
+  line_spacing(space=1.2) %>%
+  padding(padding = 0, part = "body") %>% 
+  save_as_html(path=file.path(table_data_dir, "credit_assignment_lme_2.html"))
+
+varnames <- apply(expand_grid(c("Chosen", "Foregone"), c("WSLS", "CA")), 1, function(x) paste0(x, collapse="\n"))
+varnames <- rep(varnames, time=3)
+dimnames <- rep(c("F[m]", "F[n]", "O"), each=4)
+
+credit_assignment_results2 <- data.frame(PlotOrder=1:12,
+                                        Dimension=dimnames, 
+                                        VarNames=varnames,
+                                        Coefficients=model_summary[,"Estimate"][2:13], 
+                                        SEs=model_summary[,"Std. Error"][2:13],
+                                        pvals=stars.pval(model_summary[,"Pr(>|z|)"][2:13]))
+credit_assignment_results2$VarNames <- reorder(credit_assignment_results2$VarNames, credit_assignment_results2$PlotOrder)
+
+p2 <- ggplot(data=credit_assignment_results2, mapping = aes(x=VarNames, group=Dimension)) +
+  geom_bar(mapping=aes(y=Coefficients, fill=Dimension), stat='identity', position=position_dodge(.9), show.legend = FALSE) + 
+  geom_errorbar(mapping=aes(ymin=Coefficients-SEs, ymax=Coefficients+SEs), color='black', 
+                position=position_dodge(.9), width=0.2) +
+  geom_text(mapping=aes(y=Coefficients+sign(Coefficients)*(SEs+0.05)-0.04, label=pvals),
+            position=position_dodge(.9), vjust='center', size=12) +
+  theme(text = element_text(size = 28), axis.text = element_text(size = 25), axis.title.x = element_blank(),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),
+        axis.title.y = element_blank(), axis.text.y = element_blank()) +
+  scale_color_manual(breaks = c("F[m]", "F[n]", "O"), values=c('deepskyblue', 'darkorange', 'green3')) +
+  scale_fill_manual(breaks = c("F[m]", "F[n]", "O"), values=c('deepskyblue', 'darkorange', 'green3')) + 
+  ylim(-0.7, 0.8)
+
+p1+plot_spacer() + p2 + plot_layout(widths = c(10, 1, 10))
+ggsave(filename="credit_assignment_lme.pdf", path=figure_data_dir, device='pdf',
+       width=18, height=5)
+
