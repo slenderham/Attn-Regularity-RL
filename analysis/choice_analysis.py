@@ -9,7 +9,7 @@ import setup
 import statsmodels.formula.api as smf
 import itertools
 import statsmodels.api as sm
-plt.rc('font', size=22, family='arial') 
+plt.rc('font', size=25, family='arial') 
 plt.rc('axes', linewidth=2.5)
 plt.rc('xtick.major', width=2, size=8)
 plt.rc('ytick.major', width=2, size=8)
@@ -43,10 +43,10 @@ def plot_learning_curve(data, figure_data_dir):
     sd_perf = np.nanstd(perf_all, 0)/np.sqrt(num_subj)
     sd_rwd = np.nanstd(rwd_all, 0)/np.sqrt(num_subj)
 
-    plt.plot(m_perf, color='grey')
-    plt.fill_between(np.arange(perf_all.shape[1]), m_perf-sd_perf, m_perf+sd_perf, color=(0.5, 0.5, 0.5, 0.3), label='Prob. correct')
-    plt.plot(m_rwd, color='black')
-    plt.fill_between(np.arange(rwd_all.shape[1]), m_rwd-sd_rwd, m_rwd+sd_rwd, color=(0, 0, 0, 0.3), label='Reward')
+    plt.plot(m_perf, lw=5, color='grey', label='Prob. correct')
+    plt.fill_between(np.arange(perf_all.shape[1]), m_perf-sd_perf, m_perf+sd_perf, color=(0.5, 0.5, 0.5, 0.3))
+    plt.plot(m_rwd, lw=5, color='black', label='Reward')
+    plt.fill_between(np.arange(rwd_all.shape[1]), m_rwd-sd_rwd, m_rwd+sd_rwd, color=(0, 0, 0, 0.3))
 
     # for est_trial_loc in setup.EXPERIMENT_SETUP['locEstimationTrials']:
     #     plt.arrow(est_trial_loc-window_size, 0.51, 0, 0.01, 
@@ -54,10 +54,10 @@ def plot_learning_curve(data, figure_data_dir):
 
     plt.gca().spines.right.set_visible(False)
     plt.gca().spines.top.set_visible(False)
-    plt.ylim([0.52, 0.85])
+    plt.ylim([0.52, 0.88])
     plt.xlabel('Trial number', fontsize=25)
     plt.ylabel('Performance', fontsize=25)
-    plt.legend(fontsize=22)
+    plt.legend(fontsize=22, frameon=False, labelspacing = 0.2)
     plt.tight_layout()
     plt.savefig(os.path.join(figure_data_dir, "learning_curve.pdf"))
     plt.close()

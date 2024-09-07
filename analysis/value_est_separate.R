@@ -43,14 +43,14 @@ for (idx_trial in 0:3){
   print(contest_res)
   gt_val_results <- add_row(gt_val_results, 
                             Bout=rep(idx_trial+1, each=3),
-                            Dimension=c("F[m]", "F[n]", "O"),
+                            Dimension=c("Ft[man]", "Ft[non]", "Obj"),
                             Coefficients=model_summary[,"Estimate"][2:4],
                             SEs=model_summary[,"Std. Error"][2:4],
                             pvals=model_summary[,"Pr(>|t|)"][2:4],
                             pval_diff=stars.pval(contest_res[,'Pr(>|t|)']))
   gt_val_results_for_table <- add_row(gt_val_results_for_table, 
                                       Bout=rep(idx_trial+1, each=4),
-                                      Predictor=c("Intercept", "F[m]", "F[n]", "O"),
+                                      Predictor=c("Intercept", "Ft[man]", "Ft[non]", "Obj"),
                                       b=model_summary[,"Estimate"],
                                       SE=model_summary[,"Std. Error"],
                                       t=model_summary[,"t value"],
@@ -69,19 +69,23 @@ for (idx_trial in 0:3){
 
 
 ggplot(data=gt_val_results, mapping=aes(x=Bout, color=Dimension)) + 
-  geom_line(mapping=aes(y=Coefficients), linewidth=1.5) +
-  geom_errorbar(mapping=aes(ymin=Coefficients-SEs, ymax=Coefficients+SEs), width=0.15, linewidth=1.5) +
-  geom_point(mapping=aes(y=Coefficients), shape=21, size=4, stroke=1.5, fill = "white") +
+  geom_line(mapping=aes(y=Coefficients), linewidth=2) +
+  geom_errorbar(mapping=aes(ymin=Coefficients-SEs, ymax=Coefficients+SEs), width=0.15, linewidth=2) +
+  geom_point(mapping=aes(y=Coefficients), shape=21, size=4, stroke=3, fill = "white") +
   geom_text(mapping=aes(y=max(Coefficients)+max(SEs)+0.05, label = pval_diff), size=12, color='black') + 
   theme(text = element_text(size = 25), axis.text = element_text(size = 25),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  scale_color_manual(breaks = c("F[m]", "F[n]", "O"), 
-                     values=c('deepskyblue', 'darkorange', 'green3'),
+  scale_color_manual(breaks = c("Ft[man]", "Ft[non]", "Obj"), 
+                     values=c('#4dbbd5', '#e64b35', 'grey50'),
                      name='', labels = parse_format())+
-  theme(legend.position = c(0.7, 0.07), legend.direction = "horizontal", 
+  theme(legend.position = "none", legend.direction = "horizontal", 
         legend.text.align = 0, legend.text = element_text(size=22), 
-        axis.line=element_line(size=1), axis.ticks=element_line(size=1), axis.ticks.length=unit(0.1,"inch")) +
+        legend.background = element_rect(fill='transparent'),
+        legend.key=element_blank(),
+        axis.line=element_line(size=1), axis.ticks=element_line(size=1), 
+        axis.text = element_text(color="black"),
+        axis.ticks.length=unit(0.1,"inch")) +
   scale_x_discrete(name ="Value estimation bout", limits=factor(1:4))
 
 ggsave(filename="prob_est_betas_lme_sep.pdf", path=figure_data_dir, device='pdf', 
@@ -131,13 +135,13 @@ for (idx_trial in 0:3){
   
   anova_results <- add_row(anova_results, 
                            Bout=rep(idx_trial+1, each=3),
-                           Dimension=c("F[m]", "F[n]", "O"),
+                           Dimension=c("Ft[man]", "Ft[non]", "Obj"),
                            EtaSquared=eta_squared(anova(model, type="III"))$Eta2,
                            pvals=anova(model, type="III")[,"Pr(>F)"][1:3])
   
   anova_results_for_table <- add_row(anova_results_for_table, 
                                      Bout=rep(idx_trial+1, each=3),
-                                     Predictor=c("F[m]", "F[n]", "O"),
+                                     Predictor=c("Ft[man]", "Ft[non]", "Obj"),
                                      F=anova(model, type="III")[,"F value"],
                                      NumDF=anova(model, type="III")[,"NumDF"],
                                      DenDF=anova(model, type="III")[,"DenDF"],
@@ -146,17 +150,20 @@ for (idx_trial in 0:3){
 }
 
 ggplot(data=anova_results, mapping=aes(x=Bout, color=Dimension)) + 
-  geom_line(mapping=aes(y=EtaSquared), linewidth=1.5) +
-  geom_point(mapping=aes(y=EtaSquared), shape=21, size=4, stroke=1.5, fill = "white") +
+  geom_line(mapping=aes(y=EtaSquared), linewidth=2) +
+  geom_point(mapping=aes(y=EtaSquared), shape=21, size=4, stroke=3, fill = "white") +
   theme(text = element_text(size = 25), axis.text = element_text(size = 25),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  scale_color_manual(breaks = c("F[m]", "F[n]", "O"), 
-                     values=c('deepskyblue', 'darkorange', 'green3'),
+  scale_color_manual(breaks = c("Ft[man]", "Ft[non]", "Obj"), 
+                     values=c('#4dbbd5', '#e64b35', 'grey50'),
                      name='', labels = parse_format())+
-  theme(legend.position = c(0.68, 0.07), legend.direction = "horizontal", 
+  theme(legend.position = c(0.85, 0.55), legend.direction = "vertical", 
         legend.text = element_text(size=22), legend.text.align = 0,
+        legend.background = element_rect(fill='transparent'),
+        legend.key=element_blank(),
         axis.line=element_line(size=1), axis.ticks=element_line(size=1), 
+        axis.text = element_text(color="black"),
         axis.ticks.length=unit(0.1,"inch")) +
   ylab(expression(eta[p]^2)) +
   scale_x_discrete(name ="Value estimation bout", limits=factor(1:4)) + 

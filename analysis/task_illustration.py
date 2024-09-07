@@ -8,12 +8,13 @@ from setup import EXPERIMENT_SETUP
 from scipy.special import logit
 
 import os
-plt.rc('font', size=22, family='arial') 
+plt.rc('font', size=25, family='arial') 
 plt.rc('axes', linewidth=2.5)
 plt.rc('xtick.major', width=2, size=8)
 plt.rc('ytick.major', width=2, size=8)
 plt.rc('xtick.minor', width=1, size=4)
 plt.rc('ytick.minor', width=1, size=4)
+plt.rc('mathtext', default='regular')
 
 
 def plot_rwd_schedule_exp_var(figure_data_dir):
@@ -30,14 +31,14 @@ def plot_rwd_schedule_exp_var(figure_data_dir):
     model = smf.ols('p~C(F1)+C(F2)', data=rwd_schedule_for_fitting).fit()
 
     ss_by_dimensions = sm.stats.anova_lm(model, typ=3)['sum_sq']
-    eta_sq = ss_by_dimensions/np.sum(ss_by_dimensions)
+    eta_sq = ss_by_dimensions[1:]/np.sum(ss_by_dimensions)
 
     print(sm.stats.anova_lm(model, typ=3)['sum_sq'])
 
-    plt.bar(np.arange(4), eta_sq, color=['grey', 'deepskyblue', 'darkorange', 'limegreen'])
+    plt.bar(np.arange(3), eta_sq, color=['#4dbbd5', '#e64b35', 'grey'], linewidth=4, edgecolor='k')
     plt.gca().spines.right.set_visible(False)
     plt.gca().spines.top.set_visible(False)
-    plt.xticks(np.arange(4), labels=['Mean', r'$F_m$', r'$F_n$', r'$O$'], fontsize=25)
+    plt.xticks(np.arange(3), labels=[r'$Ft_{man}$', r'$Ft_{non}$', r'$Obj$'], fontsize=25)
     plt.xlabel('Dimension', fontsize=25)
     plt.ylabel('Prop. Var. Explained', fontsize=25)
     plt.tight_layout()

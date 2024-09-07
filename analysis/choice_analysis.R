@@ -29,22 +29,22 @@ linearHypothesis(model, "pFinf-pFnoninf=0", verbose=TRUE)
 sigmoid <- function(x) {1/(1+exp(-x))}
 
 ggplot(data=choice_curve_data, mapping=aes(y=prob)) +
-  geom_function(fun = \(x) sigmoid(coef(summary(model))['pFinf','Estimate']*x), color='deepskyblue', linewidth=1.5) + 
-  geom_function(fun = \(x) sigmoid(coef(summary(model))['pFnoninf','Estimate']*x), color='darkorange', linewidth=1.5) +
-  stat_summary(aes(x=pFinf, color="F[m]"), fun.data = mean_se,  geom = "errorbar",  width=0.04, linewidth=1.5) +
-  stat_summary(aes(x=pFinf, color="F[m]"), fun = "mean", geom='point', shape=21, fill='white', size=3, stroke=1.5) +
-  stat_summary(aes(x=pFnoninf, color="F[n]"), fun.data = mean_se,  geom = "errorbar", width=0.04, linewidth=1.5) +
-  stat_summary(aes(x=pFnoninf, color="F[n]"), fun = "mean", geom='point',  shape=21, fill='white', size=3, stroke=1.5) +
+  geom_function(fun = \(x) sigmoid(coef(summary(model))['pFinf','Estimate']*x), color='#4dbbd5', linewidth=2) + 
+  geom_function(fun = \(x) sigmoid(coef(summary(model))['pFnoninf','Estimate']*x), color='#e64b35', linewidth=2) +
+  stat_summary(aes(x=pFinf, color="Ft[m]"), fun.data = mean_se,  geom = "errorbar",  width=0.05, linewidth=2) +
+  stat_summary(aes(x=pFinf, color="Ft[m]"), fun = "mean", geom='point', shape=21, fill='white', size=3, stroke=2) +
+  stat_summary(aes(x=pFnoninf, color="Ft[n]"), fun.data = mean_se,  geom = "errorbar", width=0.05, linewidth=2) +
+  stat_summary(aes(x=pFnoninf, color="Ft[n]"), fun = "mean", geom='point',  shape=21, fill='white', size=3, stroke=2) +
   theme(text = element_text(size=25), axis.text = element_text(size=25),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
   labs(color='Feature')+
   scale_x_continuous(limits=c(-1.1, 1.1), name='Log ratio of feature values') + 
   scale_y_continuous(name='Choice probability') +
-  scale_color_manual(breaks = c("F[m]", "F[n]"), 
-                     values=c('deepskyblue', 'darkorange'),
+  scale_color_manual(breaks = c("Ft[m]", "Ft[n]"), 
+                     values=c('#4dbbd5', '#e64b35'),
                      name='', labels = parse_format()) +
-  theme(legend.position = c(0.75, 0.07), legend.direction = 'horizontal', legend.text = element_text(size=25),
+  theme(legend.position = "none", legend.direction = 'horizontal', legend.text = element_text(size=25),
         axis.line=element_line(size=1), axis.ticks=element_line(size=1), axis.ticks.length=unit(0.1,"inch"))
   
 ggsave(filename="choice_curves_slope_lme.pdf", path=figure_data_dir, device='pdf', 

@@ -8,7 +8,51 @@ import setup as setup
 import statsmodels.formula.api as smf
 from scipy.special import logit
 from matplotlib import pyplot as plt
-plt.rc('font', size=15) 
+plt.rc('font', size=25, family='arial') 
+plt.rc('axes', linewidth=2.5)
+plt.rc('xtick.major', width=2, size=8)
+plt.rc('ytick.major', width=2, size=8)
+
+
+def plot_value_error_curve(data, figure_data_dir):
+    num_subj = len(data)
+    perf_all = []
+
+    pO = setup.EXPERIMENT_SETUP['reward_schedule']
+
+    num_est_trials = len(setup.EXPERIMENT_SETUP['locEstimationTrials'])
+
+    for idx_subj, sesdata in enumerate(data):
+        curr_subj_perf = []
+        for idx_trial in range(num_est_trials):
+            stimOs = sesdata['est_stims'][idx_trial*setup.EXPERIMENT_SETUP['num_objects']:(idx_trial+1)*setup.EXPERIMENT_SETUP['num_objects']]
+            prob_est = sesdata['est_values'][idx_trial*setup.EXPERIMENT_SETUP['num_objects']:(idx_trial+1)*setup.EXPERIMENT_SETUP['num_objects']]/100
+            curr_subj_perf.append(np.nansum((pO.flatten()[stimOs]-prob_est)**2)) 
+        
+        perf_all.append(np.stack(curr_subj_perf))
+        
+        
+    perf_all = np.stack(perf_all)
+    m_perf = np.nanmean(perf_all, 0)
+    sd_perf = np.nanstd(perf_all, 0)/np.sqrt(num_subj)
+
+    plt.errorbar(np.arange(perf_all.shape[1])+1, m_perf, yerr=sd_perf, fmt='ko-', 
+                 lw=5, markerfacecolor='white', markersize=15, markeredgewidth=5, 
+                 capsize=5, elinewidth=5, capthick=5)
+
+    # for est_trial_loc in setup.EXPERIMENT_SETUP['locEstimationTrials']:
+    #     plt.arrow(est_trial_loc-window_size, 0.51, 0, 0.01, 
+    #               head_width=1, head_length=0.01, color='k')
+
+    plt.gca().spines.right.set_visible(False)
+    plt.gca().spines.top.set_visible(False)
+    # plt.ylim([0.52, 0.88])
+    plt.xlabel('Value estimation bout', fontsize=25)
+    plt.ylabel('Estimation error (SSE)', fontsize=25)
+    plt.legend(fontsize=22, frameon=False)
+    plt.tight_layout()
+    plt.savefig(os.path.join(figure_data_dir, "est_error_curve.pdf"))
+    plt.close()
 
 def fit_gt_value(data, figure_data_dir, use_mixed_effects):
     pO = setup.EXPERIMENT_SETUP['reward_schedule']
@@ -153,6 +197,7 @@ if __name__=='__main__':
     with open(os.path.join(processed_data_dir, processed_file_name), "rb") as f:
         data = pickle.load(f)
 
+    plot_value_error_curve(data, figure_data_dir)
     fit_gt_value_df = fit_gt_value(data, figure_data_dir, False)
     # fit_gt_value_df
     fit_anova_df = fit_anova(data, figure_data_dir, False)
